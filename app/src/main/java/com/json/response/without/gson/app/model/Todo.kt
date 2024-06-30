@@ -1,6 +1,6 @@
 package com.json.response.without.gson.app.model
 
-import com.google.gson.annotations.SerializedName
+import com.json.response.without.gson.app.utils.gson.annotations.SerializedName
 import com.json.response.without.gson.app.utils.Config.Companion.ID
 import com.json.response.without.gson.app.utils.Config.Companion.IS_COMPLETED
 import com.json.response.without.gson.app.utils.Config.Companion.TITLE

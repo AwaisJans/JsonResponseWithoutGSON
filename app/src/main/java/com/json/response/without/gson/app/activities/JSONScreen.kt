@@ -1,29 +1,35 @@
 package com.json.response.without.gson.app.activities
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.json.response.without.gson.app.R
 import com.json.response.without.gson.app.adapter.JsonContentAdapter
-import com.json.response.without.gson.app.adapter.OnClickJsonContentItem
 import com.json.response.without.gson.app.databinding.ActivityJsonscreenBinding
-import com.json.response.without.gson.app.interfaces.ApiService
+import com.json.response.without.gson.app.interfaces.OnClickJsonContentItem
 import com.json.response.without.gson.app.model.Todo
+import com.json.response.without.gson.app.utils.Config.Companion.BASE_URL
 import com.json.response.without.gson.app.utils.Config.Companion.COMPLETED
+import com.json.response.without.gson.app.utils.Config.Companion.END_POINTS
 import com.json.response.without.gson.app.utils.Config.Companion.PENDING
-import com.json.response.without.gson.app.utils.RetrofitClient
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import com.json.response.without.gson.app.utils.gson.Gson
+import com.json.response.without.gson.app.utils.gson.reflect.TypeToken
+import java.io.BufferedReader
+import java.io.InputStream
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
 
-class JSONScreen : AppCompatActivity(),OnClickJsonContentItem {
+class JSONScreen : AppCompatActivity(), OnClickJsonContentItem {
 
     private lateinit var b: ActivityJsonscreenBinding
 
-    private var listTodo: MutableList<Todo>? = null
+    private var listTodo: List<Todo>? = null
     private var adapter: JsonContentAdapter? = null
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,48 +40,49 @@ class JSONScreen : AppCompatActivity(),OnClickJsonContentItem {
             finish()
         }
 
-        fetchTodos()
+        Handler(Looper.getMainLooper()).postDelayed({
+            fetchTodos()
+        },1000)
 
     }
 
 
-    private fun fetchTodos() {
-        // initialize list
-        listTodo = ArrayList()
-        val instance = RetrofitClient.instance.create(ApiService::class.java)
+    private fun fetchTodos(){
+        val url = URL("$BASE_URL/$END_POINTS")
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
 
-        // load data using retrofit
-        instance.getTodos().enqueue(object : Callback<List<Todo>> {
-            override fun onResponse(call: Call<List<Todo>>, response: Response<List<Todo>>) {
-                // do something with response
-                handleResponse(response)
-            }
-
-            // handle error response
-            override fun onFailure(call: Call<List<Todo>>, t: Throwable) {
-                b.pBar.visibility = View.GONE
-                b.tvLoader.text = t.message.toString()
-            }
-        })
-    }
-
-    private fun handleResponse(response: Response<List<Todo>>) {
-        // update ui based on conditions
-        if (response.isSuccessful) {
-            listTodo = response.body() as MutableList<Todo>
-            b.idLoader.visibility = View.GONE
-
-            val rv = b.rvJsonContent
-            adapter = JsonContentAdapter(listTodo!!, this@JSONScreen)
-            rv.adapter = adapter
-            rv.layoutManager = LinearLayoutManager(this@JSONScreen)
-            rv.setHasFixedSize(true)
+        // Add headers
+//        connection.setRequestProperty("Authorization", "Bearer YOUR_AUTH_TOKEN")
+//        connection.setRequestProperty("Accept", "application/json")
 
 
+        val responseCode = connection.responseCode
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            // handle response
+           handleResponse(connection.inputStream)
         } else {
             b.pBar.visibility = View.GONE
-            b.tvLoader.text = response.code().toString()
+            b.tvLoader.text = responseCode.toString()
         }
+    }
+
+    private fun handleResponse(inputStream: InputStream?) {
+        // getting list from json
+        val response = BufferedReader(InputStreamReader(inputStream)).use { it.readText() }
+        val gson = Gson()
+        val listType = object : TypeToken<List<Todo>>() {}.type
+        listTodo = gson.fromJson(response, listType)
+
+
+        // setup RV
+        val rv = b.rvJsonContent
+        adapter = JsonContentAdapter(listTodo!!, this@JSONScreen)
+        rv.adapter = adapter
+        rv.layoutManager = LinearLayoutManager(this@JSONScreen)
+        rv.setHasFixedSize(true)
+        b.idLoader.visibility = View.GONE
+
     }
 
 
@@ -85,21 +92,16 @@ class JSONScreen : AppCompatActivity(),OnClickJsonContentItem {
         val pos = position + 1
         holder.positionTV.text = pos.toString()
 
-        if(item.completed!!){
+        if (item.completed!!) {
             holder.booleanTV.text = COMPLETED
             holder.checkBox.setImageResource(R.drawable.ic_checked)
-        }else{
+        } else {
             holder.booleanTV.text = PENDING
             holder.checkBox.setImageResource(R.drawable.cross_circle_svgrepo_com)
         }
 
 
     }
-
-
-
-
-
 
 
 }

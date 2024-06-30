@@ -7,6 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.json.response.without.gson.app.R
+import com.json.response.without.gson.app.interfaces.OnClickJsonContentItem
 import com.json.response.without.gson.app.model.Todo
 
 class JsonContentAdapter (private val mData: List<Todo>, private val mListener: OnClickJsonContentItem) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {

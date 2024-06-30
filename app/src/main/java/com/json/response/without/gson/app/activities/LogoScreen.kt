@@ -1,10 +1,11 @@
 package com.json.response.without.gson.app.activities
 
 import android.content.Intent
-import android.graphics.drawable.AnimationDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.json.response.without.gson.app.R
@@ -25,7 +26,9 @@ class LogoScreen : AppCompatActivity() {
             finish()
         },2000)
 
+        val policy = ThreadPolicy.Builder().permitAll().build()
 
+        StrictMode.setThreadPolicy(policy)
 
     }
 
